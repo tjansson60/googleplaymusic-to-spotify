@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import html
 import numpy as np
 import pandas as pd
 import zipfile
@@ -23,7 +24,7 @@ def read_google_takeout_zipfile(filename, debug=False):
             if playlistpath in name:
                 if name.endswith(".csv"):
                     playlist = name.replace(playlistpath, '').split('/')[0]
-                    _df = pd.read_csv(f.open(name))
+                    _df = pd.read_csv(f.open(name), encoding='utf-8')
                     _df['Playlist'] = playlist
                     try:
                         _df['Duration (min)'] = _df['Duration (ms)'] / (1000 * 60)
@@ -32,6 +33,20 @@ def read_google_takeout_zipfile(filename, debug=False):
                     df_list.append(_df)
 
     df = pd.concat(df_list)
+
+    # Remove entries with no values in title or artist
+    df.dropna(subset=['Title', 'Artist'], inplace=True)
+
+    # Remove columns with only nan values
+    df.dropna(axis=1, how='all')
+
+    # convert HTML characters to strings in pandas dataframe
+    df['Title']  = df['Title'].astype(str).apply(html.unescape)
+    df['Artist'] = df['Artist'].astype(str).apply(html.unescape)
+
+    # df.applymap(lambda x: html.unescape(x) if pd.notnull(x) else x)
+    df['Title']  = df['Title'].replace("&#39;", "'")
+    df['Artist'] = df['Artist'].replace("&#39;", "'")
 
     if debug:
         print('Playlists found and number of songs in each')
@@ -67,7 +82,7 @@ def spotify_find_track_id(sp, name, artist, album=None, debug=False):
     return track_id
 
 
-def spotify_create_playlist_with_track_list(name, track_list, public=False, description="Exported from Google Play Music"):
+def spotify_create_playlist_with_track_list(playlist_name, track_list, public=False, description="Exported from Google Play Music"):
 
     # Login as a user so the data can be written to the playlists of the user
     scope = "user-library-read playlist-modify-public playlist-modify-private playlist-read-private"
@@ -81,14 +96,13 @@ def spotify_create_playlist_with_track_list(name, track_list, public=False, desc
     # Check if a playlist already exists
     playlist_search_results = sp.current_user_playlists()
     playlists = {item['name']: item['id'] for item in playlist_search_results['items']}
-    pprint.pprint(playlist_search_results)
     try:
         # Try to use a existing playlist of the same name
-        playlist_id = playlists[playlist]
-        print(f'Playlist calle "{playlist}" already exists with id="{playlist_id}"')
+        playlist_id = playlists[playlist_name]
+        print(f'Playlist called "{playlist_name}" already exists with id="{playlist_id}"')
     except KeyError:
         # Create the playlist
-        playlist_result = sp.user_playlist_create(username, name, public=public, description=description)
+        playlist_result = sp.user_playlist_create(username, playlist_name, public=public, description=description)
         playlist_id = playlist_result['id']
 
     # If the playlist already exists do not try to readd the numbers to the list, only the difference
@@ -100,36 +114,8 @@ def spotify_create_playlist_with_track_list(name, track_list, public=False, desc
         tracks = track_list
 
     # Add the tracks to the playlist
-    sp.user_playlist_add_tracks(username, playlist_id, tracks)
-
-
-if __name__ == '__main__':
-    # Parse the google takeout file into a pandas dataframe
-    df = read_google_takeout_zipfile('data/takeout-20200628T085613Z-001.zip')
-    print(df.Playlist.value_counts())
-
-    playlists = [
-        # 'Thumbs Up',
-        # 'Børnesange til bilen',
-        # 'Thumbs Up',
-        # 'Arbejdsmusik - rap',
-        # 'Vinteren kommer',
-        # 'Quentin Tarantino Takeover',
-        # 'Vaiana',
-        # 'Cecilia Bartoli',
-        'Warm Scandinavian morning',
-    ]
-
-    # Set up the Spotify crendentials
-    sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials())
-    for playlist in playlists:
-        df_playlist = df[df['Playlist'] == playlist].copy()
-
-        # Decorate the dataframe with the spotify track ids so we can create the playlist
-        df_playlist['trackId'] = df_playlist.apply(lambda row: spotify_find_track_id(sp, row['Title'], row['Artist'], row['Album']), axis=1)
-
-        # Create the playlist from the trackIds
-        print(playlist)
-        print(df_playlist[df_playlist['trackId'].isna()])
-        track_ids = df_playlist[df_playlist['trackId'].notna()]['trackId'].unique().tolist()
-        spotify_create_playlist_with_track_list(playlist, track_ids)
+    if len(tracks):
+        print(f'Uploading {len(tracks)} new tracks to the playlist "{playlist_name}"')
+        sp.user_playlist_add_tracks(username, playlist_id, tracks)
+    else:
+        print(f'No tracks to upload to "{playlist_name}". Already existing or not found on Spotify.')
