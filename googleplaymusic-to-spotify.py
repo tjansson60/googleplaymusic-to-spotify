@@ -9,13 +9,12 @@ df = util.read_google_takeout_zipfile('data/takeout-20200628T085613Z-001.zip')
 print(df.Playlist.value_counts())
 
 playlists = [
-    # 'Thumbs Up',
-    # 'Børnesange til bilen',
-    # 'Thumbs Up',
-    # 'Arbejdsmusik - rap',
-    # 'Vinteren kommer',
-    # 'Quentin Tarantino Takeover',
-    # 'Cecilia Bartoli',
+    'Børnesange til bilen',
+    'Thumbs Up',
+    'Arbejdsmusik - rap',
+    'Vinteren kommer',
+    'Quentin Tarantino Takeover',
+    'Cecilia Bartoli',
     'Warm Scandinavian morning',
 ]
 
@@ -30,5 +29,6 @@ for playlist in playlists:
     # Create the playlist from the trackIds
     print(playlist)
     print(df_playlist[df_playlist['trackId'].isna()])
-    track_ids = df_playlist[df_playlist['trackId'].notna()]['trackId'].unique().tolist()
+    print()
+    track_ids       = df_playlist[df_playlist['trackId'].notna()]['trackId'].tolist()
     util.spotify_create_playlist_with_track_list(playlist, track_ids)

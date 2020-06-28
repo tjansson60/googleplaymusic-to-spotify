@@ -10,7 +10,7 @@ import pprint
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 from pandarallel import pandarallel
-pandarallel.initialize(nb_workers=4)
+pandarallel.initialize()
 
 # https://spotipy.readthedocs.io/en/2.13.0/
 # https://github.com/plamere/spotipy/tree/master/examples
@@ -37,6 +37,9 @@ def read_google_takeout_zipfile(filename, debug=False):
     # Remove entries with no values in title or artist
     df.dropna(subset=['Title', 'Artist'], inplace=True)
 
+    # Remove duplicates
+    df.drop_duplicates(subset=['Title', 'Artist', 'Album', 'Playlist'], keep=False, inplace=True)
+
     # Remove columns with only nan values
     df.dropna(axis=1, how='all')
 
@@ -59,31 +62,34 @@ def read_google_takeout_zipfile(filename, debug=False):
 
 
 def spotify_find_track_id(sp, name, artist, album=None, debug=False):
-    query = f'{name} - {artist}'
+    # How to write a query: https://developer.spotify.com/documentation/web-api/reference/search/search/ For example:
+    # The query q=album:gold%20artist:abba&type=album returns only albums with the text “gold” in the album name and the
+    # text “abba” in the artist name.
+    # explicit=true
+
+    # Try to get the result with the album otherwise try to use query without the album
+    query = f'{name} {artist}'
     result = sp.search(q=query, limit=1)
 
-    if debug:
-        print(query)
-        pprint.pprint(result)
-
-    try:
+    if len(result['tracks']['items']):
         track_id     = result['tracks']['items'][0]['id']
         track_name   = result['tracks']['items'][0]['name']
         track_album  = result['tracks']['items'][0]['album']['name']
         track_artist = result['tracks']['items'][0]['album']['artists'][0]['name']
-        assert name.lower() == track_name.lower(), f'{name.lower()} != {track_name.lower()}'
-        assert artist.lower() == track_artist.lower(), f'{artist.lower()} != {track_artist.lower()}'
         if debug:
-            print(track_id, track_name, track_artist, track_album)
-    except:
+            print()
+            print(track_id)
+            print(name, artist, album)
+            print(track_name, track_artist, track_album)
+            # pprint.pprint(result)
+    else:
         track_id = np.nan
-        print(name, artist)
+        print(f'No matches found for "{query}"')
 
     return track_id
 
 
 def spotify_create_playlist_with_track_list(playlist_name, track_list, public=False, description="Exported from Google Play Music"):
-
     # Login as a user so the data can be written to the playlists of the user
     scope = "user-library-read playlist-modify-public playlist-modify-private playlist-read-private"
     username = os.environ['SPOTIPY_USER']
@@ -116,6 +122,11 @@ def spotify_create_playlist_with_track_list(playlist_name, track_list, public=Fa
     # Add the tracks to the playlist
     if len(tracks):
         print(f'Uploading {len(tracks)} new tracks to the playlist "{playlist_name}"')
-        sp.user_playlist_add_tracks(username, playlist_id, tracks)
+
+        # Upload in chunks smaller than 100:
+        # TODO: Add support for track positions
+        for i in range(0, len(tracks), 99):
+            tracks_chunk = tracks[i:i + 99]
+            sp.user_playlist_add_tracks(username, playlist_id, tracks_chunk)
     else:
         print(f'No tracks to upload to "{playlist_name}". Already existing or not found on Spotify.')
