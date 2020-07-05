@@ -61,15 +61,24 @@ def read_google_takeout_zipfile(filename, debug=False):
     return df
 
 
-def spotify_find_track_id(sp, name, artist, album=None, debug=False):
+def spotify_find_track_id(sp, name, artist, album=None, debug=False, market=None):
     # How to write a query: https://developer.spotify.com/documentation/web-api/reference/search/search/ For example:
     # The query q=album:gold%20artist:abba&type=album returns only albums with the text “gold” in the album name and the
     # text “abba” in the artist name.
     # explicit=true
 
-    # Try to get the result with the album otherwise try to use query without the album
+    # https://github.com/plamere/spotipy/issues/522
+    # I used to get the same problem few days ago. My fix was to change the market where you are making the search. By
+    # default I think it's using the "US" market, and for my searches I had to revert back to a "FR" market to get some
+    # results.
+
+    # First try with a specific market and if this does not work revert back to default US
     query = f'{name} {artist}'
-    result = sp.search(q=query, limit=1)
+    #query = 'artist:' + artist + ' track:' + name
+    result = sp.search(q=query, limit=1, type='track', market=market)
+    if not len(result['tracks']['items']):
+        result = sp.search(q=query, limit=1, type='track')
+        market = None
 
     if len(result['tracks']['items']):
         track_id     = result['tracks']['items'][0]['id']
@@ -83,10 +92,13 @@ def spotify_find_track_id(sp, name, artist, album=None, debug=False):
             print(track_name, track_artist, track_album)
             # pprint.pprint(result)
     else:
-        track_id = np.nan
+        track_id     = np.nan
+        track_name   = np.nan
+        track_album  = np.nan
+        track_artist = np.nan
         print(f'No matches found for "{query}"')
 
-    return track_id
+    return track_id, track_name, track_album, track_artist, query
 
 
 def spotify_create_playlist_with_track_list(playlist_name, track_list, public=False, description="Exported from Google Play Music"):
