@@ -5,10 +5,24 @@ After Google announced that Google Play Music would be shut down and moved to Yo
 Unfortunately neither companies makes this very easy, so I either had to pay some website for the transfer which usually entailed a subscription style payment model for this one-time transfer or do it my self, so I did the later. 
 
 ## Requirements
- * Python 3 with the requirements defined in the yaml file. 
+ * Python 3 with the requirements defined in the yaml file.
  * A zip file from Google Takeout that contains all the tracks from the playlists. 
  * A existing Spotify account and credentials we can use to make the new playlist in Spotify. 
- 
+
+### Python environment:
+Install miniconda: https://docs.conda.io/en/latest/miniconda.html
+
+And create the environment using the yaml file:
+```bash
+conda env create -n googleplaymusic-to-spotify -f googleplaymusic-to-spotify.lock.yml
+```
+Afterwards activate the environment:
+```bash
+conda activate googleplaymusic-to-spotify
+```
+
+
+
  ## Extracting the playlist from Google Play Music
  On the page https://takeout.google.com/settings/takeout:
   * `Deselect all` and only select `Google Play Music` once the zip file has been downloaded put in the `data` folder and take note of the name which is used in the script. 

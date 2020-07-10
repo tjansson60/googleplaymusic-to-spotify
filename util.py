@@ -3,10 +3,9 @@
 import os
 import html
 import numpy as np
-import pandas as pd
 import zipfile
+import pandas as pd
 import tqdm
-import pprint
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 from pandarallel import pandarallel
@@ -14,6 +13,22 @@ pandarallel.initialize()
 
 # https://spotipy.readthedocs.io/en/2.13.0/
 # https://github.com/plamere/spotipy/tree/master/examples
+
+
+def get_spotify_instance():
+    username = os.environ['SPOTIPY_USER']
+    scope = "user-library-read playlist-modify-public playlist-modify-private playlist-read-private"
+
+    try:
+        sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials())
+    except KeyError:
+        # Login as a user so the data can be written to the playlists of the user
+        token = spotipy.util.prompt_for_user_token(username, scope=scope,
+            client_id=os.environ['SPOTIPY_CLIENT_ID'],
+            client_secret=os.environ['SPOTIPY_CLIENT_SECRET'],
+            redirect_uri=os.environ['SPOTIPY_REDIRECT_URI'])
+        sp = spotipy.Spotify(auth=token)
+    return sp, username
 
 
 def read_google_takeout_zipfile(filename, debug=False):
@@ -90,7 +105,6 @@ def spotify_find_track_id(sp, name, artist, album=None, debug=False, market=None
             print(track_id)
             print(name, artist, album)
             print(track_name, track_artist, track_album)
-            # pprint.pprint(result)
     else:
         track_id     = np.nan
         track_name   = np.nan
@@ -101,15 +115,14 @@ def spotify_find_track_id(sp, name, artist, album=None, debug=False, market=None
     return track_id, track_name, track_album, track_artist, query
 
 
-def spotify_create_playlist_with_track_list(playlist_name, track_list, public=False, description="Exported from Google Play Music"):
-    # Login as a user so the data can be written to the playlists of the user
-    scope = "user-library-read playlist-modify-public playlist-modify-private playlist-read-private"
-    username = os.environ['SPOTIPY_USER']
-    token = spotipy.util.prompt_for_user_token(username, scope=scope,
-        client_id=os.environ['SPOTIPY_CLIENT_ID'],
-        client_secret=os.environ['SPOTIPY_CLIENT_SECRET'],
-        redirect_uri=os.environ['SPOTIPY_REDIRECT_URI'])
-    sp = spotipy.Spotify(auth=token)
+def spotify_create_playlist_with_track_list(
+        playlist_name,
+        track_list,
+        public=False,
+        description="Exported from GooglePlay Music"):
+
+    # Authenticate and get credentials
+    sp, username = get_spotify_instance()
 
     # Check if a playlist already exists
     playlist_search_results = sp.current_user_playlists()

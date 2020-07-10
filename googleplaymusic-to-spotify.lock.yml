@@ -1,0 +1,44 @@
+name: googleplaymusic-to-spotify
+channels:
+  - defaults
+dependencies:
+  - _libgcc_mutex=0.1
+  - ca-certificates=2020.6.24
+  - certifi=2020.6.20
+  - ld_impl_linux-64=2.33.1
+  - libedit=3.1.20191231
+  - libffi=3.3
+  - libgcc-ng=9.1.0
+  - libstdcxx-ng=9.1.0
+  - ncurses=6.2
+  - openssl=1.1.1g
+  - pip=20.1.1
+  - python=3.8.2
+  - readline=8.0
+  - setuptools=47.3.1
+  - sqlite=3.32.3
+  - tk=8.6.10
+  - wheel=0.34.2
+  - xz=5.2.5
+  - zlib=1.2.11
+  - pip:
+    - chardet==3.0.4
+    - dask==2.20.0
+    - dill==0.3.2
+    - et-xmlfile==1.0.1
+    - idna==2.10
+    - jdcal==1.4.1
+    - numpy==1.19.0
+    - openpyxl==3.0.4
+    - pandarallel==1.4.8
+    - pandas==1.0.5
+    - python-dateutil==2.8.1
+    - pytz==2020.1
+    - pyyaml==5.3.1
+    - requests==2.24.0
+    - six==1.15.0
+    - spotipy==2.13.0
+    - tqdm==4.47.0
+    - urllib3==1.25.9
+    - xlrd==1.2.0
+

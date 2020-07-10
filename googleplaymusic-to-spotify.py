@@ -1,12 +1,7 @@
 #!/usr/bin/env python
 
 import pandas as pd
-from spotipy.oauth2 import SpotifyClientCredentials
-import spotipy
 import util
-
-# Authenticate
-sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials())
 
 # Define the files
 file_zip       = 'data/takeout-20200628T085613Z-001.zip'
@@ -15,13 +10,16 @@ file_decorated = 'data/takeout-20200628T085613Z-001-decorated.xlsx'
 file_no_match  = 'data/takeout-20200628T085613Z-001-no-match.xlsx'
 playlists      = [  # Define the playlist that should be re-created in Spotify
     'Børnesange til bilen',
-    'Thumbs Up',
-    'Arbejdsmusik - rap',
-    'Vinteren kommer',
-    'Quentin Tarantino Takeover',
-    'Cecilia Bartoli',
-    'Warm Scandinavian morning',
+    # 'Thumbs Up',
+    # 'Arbejdsmusik - rap',
+    # 'Vinteren kommer',
+    # 'Quentin Tarantino Takeover',
+    # 'Cecilia Bartoli',
+    # 'Warm Scandinavian morning',
 ]
+
+# Authenticate
+sp, _username = util.get_spotify_instance()
 
 # Parse the google takeout file into a pandas dataframe
 try:
