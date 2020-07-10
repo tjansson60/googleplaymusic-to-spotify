@@ -14,14 +14,15 @@ Unfortunately neither companies makes this very easy, so I either had to pay som
   * `Deselect all` and only select `Google Play Music` once the zip file has been downloaded put in the `data` folder and take note of the name which is used in the script. 
  
 ## Spotify credentials
-Setup some shell variables or hardcode them in your version of the script. The scripts assumes the following variables exists, so include in your `.bashrc` or similar:
+Setup some shell variables or hardcode them in your version of the script. The scripts assumes the following variables exists and these are Spotify API credentials, so include in your `.bashrc` or similar:
 
 ```bash
 export SPOTIPY_USER=''
 export SPOTIPY_CLIENT_ID=''
 export SPOTIPY_CLIENT_SECRET=''
-export SPOTIPY_REDIRECT_URI=''
+export SPOTIPY_REDIRECT_URI="http://localhost:9090"
 ```
+Get your credentials at https://developer.spotify.com/my-applications
 
 # Running the script
 This script does a couple of things:
